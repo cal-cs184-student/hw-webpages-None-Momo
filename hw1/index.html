@@ -294,6 +294,54 @@ float sy = (float)py + ((float)si + oy) * sub_step;</pre>
 			<li><b>Right leg:</b> angled backward with <code>rotate(-15)</code>.</li>
 		</ul>
 
+		<h3>Extra Credit: Viewport Rotation via GUI Keys</h3>
+		<p>
+			I added a viewport rotation feature controlled by two keys: <kbd>R</kbd> rotates the viewport 15&deg; clockwise and <kbd>E</kbd> rotates it 15&deg; counter-clockwise. Pressing <kbd>Space</kbd> resets both the view position and the rotation angle.
+		</p>
+
+		<h4>Matrix Stack Modification</h4>
+		<p>
+			The renderer uses a two-stage matrix pipeline to go from SVG coordinates to screen pixels:
+		</p>
+		<p style="text-align:center;">
+			SVG space &xrarr; <code>svg_to_ndc</code> &xrarr; NDC space &xrarr; <code>ndc_to_screen</code> &xrarr; Screen space
+		</p>
+		<p>
+			I insert a rotation matrix <em>in SVG space</em> around the current view center \((c_x, c_y)\), so the full draw transform becomes:
+		</p>
+		\[
+			M_{\text{draw}} = M_{\text{ndc\_to\_screen}} \cdot M_{\text{svg\_to\_ndc}} \cdot \underbrace{T(c_x,c_y)\cdot R(\theta)\cdot T(-c_x,-c_y)}_{\text{rotation around view center}}
+		\]
+		<p>
+			The view center is extracted from <code>svg_to_ndc</code> at runtime:
+		</p>
+		<pre style="background:#f5f5f5; padding:12px; border-radius:4px; font-size:0.85em;">
+float span = svg_to_ndc(2,2) / 2.0f;
+float cx   = span - svg_to_ndc(0,2);   // view center x in SVG space
+float cy   = span - svg_to_ndc(1,2);   // view center y in SVG space
+Matrix3x3 rot_svg = translate(cx, cy) * rotate(viewport_angle) * translate(-cx, -cy);
+Matrix3x3 draw_xform = ndc_to_screen * svg_to_ndc * rot_svg;</pre>
+		<p>
+			The canvas border outline is also drawn with <code>draw_xform</code>, so it rotates together with the scene. Panning and zooming still work normally — they update <code>svg_to_ndc</code>, while the rotation is stored separately in <code>viewport_angle</code> and composed fresh every frame.
+		</p>
+
+		<h4>Result: <code>basic/test4.svg</code> at 0&deg; and 45&deg;</h4>
+		<table style="width: 100%; text-align: center; border-collapse: collapse;">
+		  <tr>
+			<td>
+			  <img src="./images/task3_rotate_0.png" width="500px"/>
+			  <figcaption>Original view (0&deg; rotation)</figcaption>
+			</td>
+			<td>
+			  <img src="./images/task3_rotate_45.png" width="500px"/>
+			  <figcaption>After pressing <kbd>R</kbd> three times (45&deg; clockwise)</figcaption>
+			</td>
+		  </tr>
+		</table>
+		<p>
+			The canvas border (the black rectangle) rotates together with all the SVG content, confirming that the rotation is applied uniformly to the entire <code>svg_to_ndc</code> → screen pipeline. The scene geometry is preserved exactly — only the camera orientation changes.
+		</p>
+
 		<h2>Task 4: Barycentric coordinates</h2>
 
 		<h3>What Are Barycentric Coordinates?</h3>
