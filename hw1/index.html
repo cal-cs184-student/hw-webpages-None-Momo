@@ -44,10 +44,10 @@
 
 		<h2>Overview</h2>
 		<p>
-			In this homework I implemented a software rasterizer that can render SVG files containing triangles, interpolated-color triangles, and textured triangles. The core pipeline starts from Task&nbsp;1, where I built a triangle rasterizer using <b>edge functions</b> evaluated at pixel centers, and progressively added supersampling (Task&nbsp;2), affine transforms (Task&nbsp;3), barycentric coordinate interpolation (Task&nbsp;4), texture sampling (Task&nbsp;5), and mipmap level sampling (Task&nbsp;6).
+			In this homework I built a complete software rasterizer from scratch, capable of rendering SVG scenes with solid-color triangles, smooth color gradients, and texture-mapped geometry. Starting from a basic edge-function test in Task&nbsp;1, I incrementally added supersampling for antialiasing (Task&nbsp;2), homogeneous-coordinate transforms to animate an SVG robot (Task&nbsp;3), barycentric interpolation for per-vertex color blending (Task&nbsp;4), UV-mapped texture sampling with nearest-neighbor and bilinear filtering (Task&nbsp;5), and finally mipmap-based level sampling to eliminate minification aliasing (Task&nbsp;6).
 		</p>
 		<p>
-			The most interesting takeaway was seeing how a simple mathematical idea — the sign of a linear edge function — can be turned into a highly efficient inner loop through incremental evaluation and convexity-based early exit. It also gave me a much deeper understanding of why GPUs are designed the way they are: the per-pixel work in rasterization is embarrassingly parallel and extremely lightweight when you factor out the per-triangle setup.
+			Two things surprised me most during this assignment. First, how much a single mathematical trick — incrementally updating the edge function by adding a constant instead of recomputing from scratch each pixel — can do for performance. Combined with a convexity-based early exit, this brought the inner loop cost down to just a handful of additions and comparisons. Second, how cleanly the different antialiasing strategies complement each other: supersampling handles geometric edge aliasing, mipmap level selection handles texture minification aliasing, and bilinear pixel sampling smooths magnification blockiness — and they can all be toggled independently and combined freely.
 		</p>
 
 		<h2>Task 1: Drawing Single-Color Triangles</h2>
