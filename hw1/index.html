@@ -173,7 +173,7 @@
 			<li>
 				<b><code>rasterize_triangle()</code></b> &mdash; for each pixel in the bounding box, I iterate over a <code>sqrt(sample_rate) &times; sqrt(sample_rate)</code> grid of sub-sample positions evenly distributed within the pixel. Each sub-sample center is at:
 				\[
-					\bigl(px + (sj + 0.5) \cdot \tfrac{1}{\sqrt{N}},\;\; py + (si + 0.5) \cdot \tfrac{1}{\sqrt{N}}\bigr)
+					\bigl(px + (sj + 0.5) \cdot \frac{1}{\sqrt{N}},\;\; py + (si + 0.5) \cdot \frac{1}{\sqrt{N}}\bigr)
 				\]
 				where \(N\) = <code>sample_rate</code>. Each sub-sample is independently tested against the triangle edge functions and, if inside, its slot in <code>sample_buffer</code> is filled with the triangle color.
 			</li>
