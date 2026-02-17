@@ -333,7 +333,13 @@
 		  </tr>
 		</table>
 		<p>
-			<b>Analysis:</b> The difference between nearest and bilinear sampling is most visible in regions where the texture is magnified (zoomed in) — nearest sampling shows blocky, pixelated edges while bilinear sampling produces smoother transitions between texels. At higher supersampling rates (16), both methods look better overall because edge aliasing is reduced, but bilinear still has an advantage in texture quality. The two methods produce the largest difference when the texture is being magnified and contains high-frequency detail (e.g., thin lines on the map grid).
+			<b>Analysis:</b> The difference between nearest and bilinear sampling is most visible in regions where the texture is <b>magnified</b> (zoomed in) — nearest sampling shows blocky, pixelated edges while bilinear sampling produces smoother transitions between texels by blending the four surrounding texels. At higher supersampling rates (16), both methods look better overall because edge aliasing is reduced, but bilinear still has an advantage in texture quality within each pixel.
+		</p>
+		<p>
+			The two methods produce the <b>largest difference</b> when the texture is magnified and contains high-frequency detail (e.g., thin lines, sharp color boundaries on the map grid) — this is where nearest-neighbor snaps to a single coarse texel while bilinear meaningfully interpolates between neighbors.
+		</p>
+		<p>
+			Conversely, the difference is <b>small or negligible</b> when the texture is heavily <b>minified</b> (many texels map to a single screen pixel): in that case, both nearest and bilinear only sample one or a few texels out of many that contribute to the footprint, so both methods equally fail to account for the unsampled texels and produce similar aliasing artifacts (moiré, shimmering). This is precisely the scenario that requires mipmap level sampling (Task 6) — no amount of interpolation between a handful of texels can substitute for pre-filtering the entire footprint into a single low-resolution texel.
 		</p>
 
 		<h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
