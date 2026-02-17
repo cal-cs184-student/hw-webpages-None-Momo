@@ -210,6 +210,52 @@
 			This happens because supersampling estimates the <em>fractional area</em> of each pixel covered by the triangle. A pixel with 3 out of 4 sub-samples inside gets 75% of the triangle color, rather than 100% or 0%. More sub-samples mean a finer estimate of this fraction, which translates to smoother anti-aliased edges.
 		</p>
 
+		<h3>Extra Credit: Jittered (Stratified) Sampling</h3>
+		<p>
+			Standard grid supersampling places sub-samples at the <em>center</em> of each grid cell within the pixel. This regularity can cause structured aliasing: if the triangle edge happens to align with the grid, a consistent subset of cells will always be missed, producing periodic artifacts (e.g., a dashed or stepped appearance on thin geometry). Jittered (stratified) sampling breaks this by keeping the same \(\sqrt{N} \times \sqrt{N}\) stratification — one sample per cell — but placing each sample at a <em>random position within its cell</em> rather than the center.
+		</p>
+		<p>
+			<b>Implementation:</b> I added a <code>use_jitter</code> flag to <code>RasterizerImp</code>, toggled with the <kbd>J</kbd> key. A deterministic hash function <code>jitter_offset(px, py, si, sj, axis)</code> maps the sub-sample identity to a reproducible float in \([0, 1)\), replacing the fixed \(+0.5\) offset used in grid mode:
+		</p>
+		<pre style="background:#f5f5f5; padding:12px; border-radius:4px; font-size:0.85em;">
+float ox = use_jitter ? jitter_offset(px, py, si, sj, 0) : 0.5f;
+float oy = use_jitter ? jitter_offset(px, py, si, sj, 1) : 0.5f;
+float sx = (float)px + ((float)sj + ox) * sub_step;
+float sy = (float)py + ((float)si + oy) * sub_step;</pre>
+		<p>
+			The hash uses a combination of XOR-shift and multiplicative hashing seeded by <code>(px, py, si, sj, axis)</code>, ensuring adjacent sub-samples are uncorrelated while remaining perfectly deterministic across frames — no flickering noise.
+		</p>
+
+		<h3>Comparison: Grid vs. Jitter on <code>basic/test4.svg</code></h3>
+		<p>The pixel inspector is focused on the thin red triangle tip — the most aliasing-prone region in the scene.</p>
+		<table style="width: 100%; text-align: center; border-collapse: collapse;">
+		  <tr>
+			<td></td>
+			<td><b>Grid Supersampling</b></td>
+			<td><b>Jittered Supersampling</b></td>
+		  </tr>
+		  <tr>
+			<td><b>Rate = 4</b></td>
+			<td><img src="./images/task2_grid_4.png" width="380px"/>
+			<figcaption>Grid, 4 samples/pixel</figcaption></td>
+			<td><img src="./images/task2_jitter_4.png" width="380px"/>
+			<figcaption>Jitter, 4 samples/pixel</figcaption></td>
+		  </tr>
+		  <tr>
+			<td><b>Rate = 16</b></td>
+			<td><img src="./images/task2_grid_16.png" width="380px"/>
+			<figcaption>Grid, 16 samples/pixel</figcaption></td>
+			<td><img src="./images/task2_jitter_16.png" width="380px"/>
+			<figcaption>Jitter, 16 samples/pixel</figcaption></td>
+		  </tr>
+		</table>
+		<p>
+			<b>Analysis:</b> At <b>rate = 4</b>, the grid produces a regular stepped pattern along the thin triangle's edge — because the four sample positions are fixed relative to every pixel, an edge that passes between two cells is always missed by the same sub-samples, creating a repeating blocky artifact. Jittered sampling breaks this regularity: the random offsets within each cell mean the effective coverage estimate varies from pixel to pixel, converting the structured staircase into softer, less periodic noise. At <b>rate = 16</b>, both methods look similar because more samples provide better coverage overall, but jitter still produces a marginally less structured transition along the thinnest part of the edge where the triangle nearly misses pixel centers.
+		</p>
+		<p>
+			The tradeoff is that jitter introduces slight frame-to-frame variance if a non-deterministic RNG is used (avoided here by using a hash). It does not reduce the <em>expected</em> error compared to grid sampling at the same rate, but it converts structured aliasing into visually less objectionable noise — a well-known principle in Monte Carlo rendering.
+		</p>
+
 		<h2>Task 3: Transforms</h2>
 
 		<h3>Implementation</h3>
