@@ -68,7 +68,7 @@
 				where \( A_i = y_{i+1} - y_i \), \( B_i = x_i - x_{i+1} \), and \( C_i = x_{i+1} y_i - x_i y_{i+1} \). A point is inside the triangle when all three edge functions share the same sign (all &ge;&nbsp;0 or all &le;&nbsp;0), which naturally handles both clockwise and counter-clockwise winding orders. Boundary samples (where one or more \( E_i = 0 \)) are included.
 			</li>
 			<li>
-				<b>Incremental evaluation at pixel centers.</b> I evaluate \( E_i \) at the first sample center \( (\text{min\_x}+0.5,\; \text{min\_y}+0.5) \). Then, when stepping one pixel to the right, each edge value is updated by simply adding \( A_i \); when stepping one row down, the row-start value is updated by adding \( B_i \). This reduces the per-pixel cost from <b>6 multiplications + 6 additions</b> (naïve recomputation) to <b>3 additions + a few comparisons</b>.
+				<b>Incremental evaluation at pixel centers.</b> I evaluate \( E_i \) at the first sample center \( (x_{\min}+0.5,\; y_{\min}+0.5) \). Then, when stepping one pixel to the right, each edge value is updated by simply adding \( A_i \); when stepping one row down, the row-start value is updated by adding \( B_i \). This reduces the per-pixel cost from <b>6 multiplications + 6 additions</b> (naïve recomputation) to <b>3 additions + a few comparisons</b>.
 			</li>
 			<li>
 				<b>Scanline early exit.</b> Because a triangle is convex, each horizontal scanline intersects it in at most one contiguous segment. I track a boolean <code>entered</code>; once the pixel leaves the triangle after having been inside, I <code>break</code> out of the inner loop immediately, skipping all remaining pixels on that row.
