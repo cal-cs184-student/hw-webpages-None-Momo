@@ -668,6 +668,19 @@ d_{\text{cam}} = \bigl((2s_x - 1)\tan(\frac{\text{hFov}}{2}),\; (2s_y - 1)\tan(\
 			<code>radius=5, sigma_s=3.0, sigma_r=0.1</code>.
 		</p>
 
+		<h4>Results: Before vs. After Denoising (s=4, l=4, m=5)</h4>
+		<p>
+			Both images use the same 4 spp render. The bilateral filter preserves the sharp color
+			boundary between the red/blue walls and the sphere edges, while smoothing the flat-surface
+			Monte Carlo noise.
+		</p>
+		<table>
+			<tr>
+				<td><img src="images/ec1_noisy.png" width="100%"/><br/>Without denoising (s=4 spp, noisy)</td>
+				<td><img src="images/ec1_denoised.png" width="100%"/><br/>With bilateral denoising (radius=5, &sigma;<sub>s</sub>=3.0, &sigma;<sub>r</sub>=0.1)</td>
+			</tr>
+		</table>
+
 		<h3>EC2: Motion Blur</h3>
 		<p>
 			Motion blur simulates the effect of objects moving during the camera's shutter interval.
@@ -698,6 +711,20 @@ d_{\text{cam}} = \bigl((2s_x - 1)\tan(\frac{\text{hFov}}{2}),\; (2s_y - 1)\tan(\
 			the bounding boxes to cover the full motion range; for the small velocities typical of a
 			demonstration, the rest-position BVH remains correct.
 		</p>
+
+		<h4>Results: Motion Blur Renders (s=64, l=4, m=5)</h4>
+		<p>
+			A random per-primitive rigid velocity (scale=0.3 for spheres, 0.15 for bunny) is applied
+			during rendering. Each ray samples a uniform shutter time \(t \in [0,1]\), offsetting
+			vertices by \(t \cdot \mathbf{v}\). Averaging over 64 samples per pixel produces the
+			characteristic smearing effect while global illumination remains physically correct.
+		</p>
+		<table>
+			<tr>
+				<td><img src="images/ec2_motionblur.png" width="100%"/><br/>CBspheres &mdash; motion blur (vel scale=0.3)</td>
+				<td><img src="images/ec2_motionblur_bunny.png" width="100%"/><br/>CBbunny &mdash; motion blur (vel scale=0.15)</td>
+			</tr>
+		</table>
 
 		<h3>EC3: K-d Tree Alternative Acceleration Structure</h3>
 		<p>
@@ -740,32 +767,48 @@ d_{\text{cam}} = \bigl((2s_x - 1)\tan(\frac{\text{hFov}}{2}),\; (2s_y - 1)\tan(\
 				whichever structure is active.</li>
 		</ul>
 
-		<h4>BVH vs. K-d Tree Comparison</h4>
+		<h4>Visual Comparison: BVH vs. K-d Tree (CBbunny, s=64, l=4, m=5)</h4>
+		<p>
+			Both accelerators produce pixel-identical images&mdash;they only affect traversal speed.
+		</p>
+		<table>
+			<tr>
+				<td><img src="images/ec3_bvh.png" width="100%"/><br/>BVH (SAH, 12-bucket)</td>
+				<td><img src="images/ec3_kdtree.png" width="100%"/><br/>K-d Tree (median-centroid)</td>
+			</tr>
+		</table>
+
+		<h4>BVH vs. K-d Tree Performance (measured, s=64, l=4, m=5, 8 threads)</h4>
 		<table style="border: 1px solid #ccc; margin: 10px auto; width: 90%;">
 			<tr style="background: #f0f0f0;">
 				<th>Scene</th><th>Primitives</th>
-				<th>BVH Build (s)</th><th>K-d Tree Build (s)</th>
-				<th>BVH Isects/Ray</th><th>K-d Tree Isects/Ray</th>
+				<th>Accelerator</th>
+				<th>Build (s)</th>
+				<th>Isects/Ray</th>
+				<th>Render Time (s)</th>
 			</tr>
 			<tr>
-				<td>CBbunny.dae</td><td>33,696</td>
-				<td>~0.04</td><td>~0.03</td>
-				<td>~3.2</td><td>~4.8</td>
+				<td rowspan="2">CBbunny.dae</td><td rowspan="2">28,588</td>
+				<td>BVH (SAH)</td>
+				<td>0.0203</td>
+				<td>7.01</td>
+				<td>10.46</td>
 			</tr>
 			<tr>
-				<td>CBlucy.dae</td><td>133,796</td>
-				<td>~0.12</td><td>~0.10</td>
-				<td>~2.8</td><td>~5.1</td>
+				<td>K-d Tree</td>
+				<td>0.0184</td>
+				<td>7.51</td>
+				<td>13.73</td>
 			</tr>
 		</table>
 		<p>
-			The k-d tree builds slightly faster (no SAH cost evaluation), but the BVH's SAH splits
-			produce tighter bounding boxes that better partition the geometry, resulting in fewer
-			intersection tests per ray. For scenes with uniform primitive distributions, the k-d tree
-			performs comparably; for scenes with clustered geometry (like the Stanford models), the
-			SAH-based BVH has a clear advantage. Both structures produce identical rendered images
-			since they are exact accelerators&mdash;they only affect traversal speed, not the
-			intersection results.
+			The k-d tree builds slightly faster (no per-bucket SAH cost evaluation), but produces
+			7.5% more intersection tests per ray than the SAH-BVH on CBbunny. This is because SAH
+			minimizes expected traversal cost by weighting splits by child surface areas, while the
+			median-centroid split only balances primitive counts. On scenes with clustered geometry
+			(like the Stanford bunny), the SAH advantage is measurable: the BVH rendered 31% faster
+			(10.5s vs 13.7s). Both structures produce numerically identical images&mdash;they are
+			exact accelerators that only affect traversal speed.
 		</p>
 
 		</div>
